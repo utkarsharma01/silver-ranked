@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grey Hair? Enlightened.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Noto+Serif+JP:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --void: #05050f;
+      --deep: #0a0a1a;
+      --kakashi-silver: #c8cdd6;
+      --gojo-blue: #00d4ff;
+      --infinity-purple: #8b5cf6;
+      --sharingan-red: #ff2244;
+      --gold: #f5c842;
+      --text-dim: #7a8099;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--void);
+      color: var(--kakashi-silver);
+      font-family: 'Noto Serif JP', serif;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      position: fixed;
+      width: 12px; height: 12px;
+      background: var(--gojo-blue);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s, background 0.2s;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid var(--infinity-purple);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: all 0.15s ease;
+    }
+
+    /* Canvas for particles */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 1;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 30% 40%, rgba(0,212,255,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 70% 60%, rgba(139,92,246,0.09) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Japanese kanji background */
+    .kanji-bg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Serif JP', serif;
+      font-size: clamp(12rem, 35vw, 28rem);
+      font-weight: 700;
+      color: rgba(139,92,246,0.04);
+      letter-spacing: -0.05em;
+      user-select: none;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .eyepatch {
+      font-size: 1.1rem;
+      letter-spacing: 0.5em;
+      color: var(--gojo-blue);
+      font-family: 'Share Tech Mono', monospace;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 1s 0.3s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(2.8rem, 8vw, 7rem);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 1s 0.6s forwards;
+    }
+
+    .hero-title .silver {
+      display: block;
+      background: linear-gradient(135deg, #e8eaf0 0%, var(--kakashi-silver) 40%, #8892aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(200,205,214,0.3));
+    }
+
+    .hero-title .accent {
+      display: block;
+      background: linear-gradient(90deg, var(--gojo-blue), var(--infinity-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 0.6em;
+      letter-spacing: 0.1em;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-dim);
+      max-width: 500px;
+      line-height: 1.7;
+      font-style: italic;
+      opacity: 0;
+      animation: fadeUp 1s 0.9s forwards;
+      margin-bottom: 2.5rem;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      opacity: 0;
+      animation: fadeUp 1s 1.8s forwards;
+      color: var(--text-dim);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+    }
+    .scroll-hint::after {
+      content: '';
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, var(--infinity-purple), transparent);
+      animation: lineGrow 1.5s 2s ease infinite;
+    }
+
+    /* Infinity symbol decoration */
+    .infinity-ring {
+      position: absolute;
+      width: 500px; height: 500px;
+      border: 1px solid rgba(139,92,246,0.12);
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: spin 30s linear infinite;
+      pointer-events: none;
+    }
+    .infinity-ring::before {
+      content: '';
+      position: absolute;
+      width: 350px; height: 350px;
+      border: 1px dashed rgba(0,212,255,0.08);
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: spin 20s linear infinite reverse;
+    }
+
+    /* ── SECTION SHARED ── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.4em;
+      color: var(--gojo-blue);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .section-tag::after {
+      content: '';
+      flex: 1;
+      max-width: 80px;
+      height: 1px;
+      background: var(--gojo-blue);
+      opacity: 0.4;
+    }
+
+    .section-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      margin-bottom: 3rem;
+      background: linear-gradient(135deg, #fff, var(--kakashi-silver));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── FAQ CARDS ── */
+    .faq-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .faq-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: 2px;
+      padding: 2rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+      cursor: default;
+    }
+    .faq-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, var(--gojo-blue), var(--infinity-purple));
+    }
+    .faq-card:hover {
+      border-color: rgba(0,212,255,0.35);
+      transform: translateX(4px);
+    }
+
+    .faq-q {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .faq-a {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--kakashi-silver);
+    }
+
+    .faq-char {
+      position: absolute;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'Noto Serif JP', serif;
+      font-size: 2.5rem;
+      color: rgba(139,92,246,0.12);
+      user-select: none;
+    }
+
+    /* ── QUOTE BLOCK ── */
+    .quote-block {
+      border-left: 3px solid var(--infinity-purple);
+      padding: 2rem 2.5rem;
+      margin: 4rem 0;
+      background: rgba(139,92,246,0.05);
+      position: relative;
+    }
+    .quote-block blockquote {
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      font-style: italic;
+      line-height: 1.6;
+      color: #d0d4e0;
+    }
+    .quote-attr {
+      margin-top: 1rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--infinity-purple);
+      letter-spacing: 0.3em;
+    }
+
+    /* ── STATS ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1.5rem;
+      margin: 3rem 0;
+    }
+
+    .stat-box {
+      text-align: center;
+      padding: 2rem 1rem;
+      border: 1px solid rgba(0,212,255,0.15);
+      background: rgba(0,212,255,0.03);
+      position: relative;
+    }
+    .stat-box::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 40%;
+      height: 1px;
+      background: var(--gojo-blue);
+      opacity: 0.4;
+    }
+    .stat-num {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, var(--gojo-blue), var(--infinity-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+    .stat-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(139,92,246,0.3), transparent);
+      margin: 2rem 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── REDIRECT BUTTON ── */
+    .cta-area {
+      text-align: center;
+      padding: 5rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.4em;
+      color: var(--text-dim);
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      color: var(--void);
+      background: linear-gradient(135deg, var(--gojo-blue), var(--infinity-purple));
+      border: none;
+      padding: 1.1rem 3rem;
+      cursor: none;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    }
+    .cta-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 40px rgba(0,212,255,0.4), 0 0 80px rgba(139,92,246,0.2);
+    }
+    .cta-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      transform: translateX(-100%);
+      transition: transform 0.4s;
+    }
+    .cta-btn:hover::after { transform: translateX(100%); }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      color: rgba(122,128,153,0.5);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @keyframes lineGrow {
+      0%,100% { opacity: 0.3; transform: scaleY(0.8); }
+      50% { opacity: 1; transform: scaleY(1.2); }
+    }
+    @keyframes pulse-glow {
+      0%,100% { text-shadow: 0 0 20px rgba(0,212,255,0.3); }
+      50% { text-shadow: 0 0 40px rgba(0,212,255,0.7), 0 0 80px rgba(139,92,246,0.4); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="kanji-bg">白</div>
+  <div class="infinity-ring"></div>
+
+  <p class="eyepatch">// Domain: Infinite Void of Silver</p>
+
+  <h1 class="hero-title">
+    <span class="silver">Silver Ranked</span>
+    <span class="accent">Since Birth, Apparently</span>
+  </h1>
+
+  <p class="hero-subtitle">
+    You noticed my hair.<br/>
+    Kakashi noticed a thousand enemies before breakfast.<br/>
+    Gojo declared himself the strongest at age six.<br/>
+    We all have our callings.
+  </p>
+
+  <div class="scroll-hint">SCROLL TO UNDERSTAND</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── FAQ ── -->
+<section>
+  <p class="section-tag reveal">Interrogation Log</p>
+  <h2 class="section-title reveal">Frequently Asked Questions<br/>I'm Tired Of</h2>
+
+  <div class="faq-grid">
+
+    <div class="faq-card reveal">
+      <p class="faq-q">Q — "Oh wow, is that natural?"</p>
+      <p class="faq-a">No. I dye it grey every morning at 4am because I enjoy suffering. Yes, it's natural. Welcome to my origin story.</p>
+      <span class="faq-char">白</span>
+    </div>
+
+    <div class="faq-card reveal">
+      <p class="faq-q">Q — "You must be so stressed!"</p>
+      <p class="faq-a">I automate tests for a living. My stress levels are handled programmatically. The hair is just a feature, not a bug.</p>
+      <span class="faq-char">無</span>
+    </div>
+
+    <div class="faq-card reveal">
+      <p class="faq-q">Q — "Have you tried [random remedy]?"</p>
+      <p class="faq-a">Have you tried reading the room? Kakashi didn't cover his face to hide flaws. It's called mystique. Look it up.</p>
+      <span class="faq-char">術</span>
+    </div>
+
+    <div class="faq-card reveal">
+      <p class="faq-q">Q — "You look so old for your age!"</p>
+      <p class="faq-a">Gojo Satoru wears a blindfold and still sees everything. I have grey hair and still debug your broken test cases. We are not the same.</p>
+      <span class="faq-char">限</span>
+    </div>
+
+    <div class="faq-card reveal">
+      <p class="faq-q">Q — "Does it bother you?"</p>
+      <p class="faq-a">I built a whole website to answer this question. You tell me.</p>
+      <span class="faq-char">∞</span>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── STATS ── -->
+<section>
+  <p class="section-tag reveal">System Stats</p>
+  <h2 class="section-title reveal">By The Numbers</h2>
+
+  <div class="stats-row">
+    <div class="stat-box reveal">
+      <span class="stat-num">∞</span>
+      <span class="stat-label">Times Asked About Hair</span>
+    </div>
+    <div class="stat-box reveal">
+      <span class="stat-num">0</span>
+      <span class="stat-label">Cares Given</span>
+    </div>
+    <div class="stat-box reveal">
+      <span class="stat-num">2</span>
+      <span class="stat-label">Anime Characters With Same Energy</span>
+    </div>
+    <div class="stat-box reveal">
+      <span class="stat-num">100%</span>
+      <span class="stat-label">Unbothered. Automated. Elevated.</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── QUOTES ── -->
+<section>
+  <p class="section-tag reveal">Wisdom From The Grey</p>
+
+  <div class="quote-block reveal">
+    <blockquote>"In this world, those with power define what's right and wrong. My grey hair? That's power. That's the ceiling you're looking at."</blockquote>
+    <p class="quote-attr">— Gojo Satoru (paraphrased for hair discourse)</p>
+  </div>
+
+  <div class="quote-block reveal">
+    <blockquote>"I could tell you how long I've had grey hair. But that would require me to care about the question. Come back when you've mastered the Chidori."</blockquote>
+    <p class="quote-attr">— Kakashi Hatake (definitely said this, probably)</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── REAL TALK ── -->
+<section>
+  <p class="section-tag reveal">// Classified Intel — Real Talk</p>
+  <h2 class="section-title reveal">Okay, The Actual Reason</h2>
+
+  <p class="real-intro reveal">
+    Sarcasm aside — there's a genuine story here. I grew up and lived across some of India's most
+    pollution-hit cities. My hair didn't grey because of stress or genetics alone.
+    It greyed because the air and water had other plans.
+  </p>
+
+  <div class="city-grid">
+
+    <div class="city-card reveal">
+      <div class="city-header">
+        <span class="city-icon">🏭</span>
+        <div>
+          <p class="city-name">Kota, Rajasthan</p>
+          <p class="city-sub">JEE Coaching Era</p>
+        </div>
+      </div>
+      <p class="city-desc">
+        Moved here for JEE coaching. Survived the grind, the packed schedule,
+        and the Chambal river's mineral-heavy hard water that had zero interest in keeping
+        hair healthy. The city's only job was to break you academically — the water just
+        handled the hair as a bonus.
+      </p>
+      <div class="pollution-bar">
+        <span class="bar-label">Water Quality</span>
+        <div class="bar-track"><div class="bar-fill red" style="width:82%"></div></div>
+        <span class="bar-val">Rough</span>
+      </div>
+      <div class="pollution-bar">
+        <span class="bar-label">Air Quality</span>
+        <div class="bar-track"><div class="bar-fill orange" style="width:70%"></div></div>
+        <span class="bar-val">Moderate–Poor</span>
+      </div>
+    </div>
+
+    <div class="city-card reveal">
+      <div class="city-header">
+        <span class="city-icon">🌫️</span>
+        <div>
+          <p class="city-name">Ghaziabad, UP</p>
+          <p class="city-sub">Engineering College Era</p>
+        </div>
+      </div>
+      <p class="city-desc">
+        Came here for engineering. Four years of late-night labs, deadlines, and the Hindon river —
+        classified as one of the most polluted in Asia — as the backdrop.
+        PM2.5 levels that make your lungs file a formal complaint. The grey hair had a
+        full four years to establish itself here. It did not waste the opportunity.
+      </p>
+      <div class="pollution-bar">
+        <span class="bar-label">Water Quality</span>
+        <div class="bar-track"><div class="bar-fill red" style="width:91%"></div></div>
+        <span class="bar-val">Critical</span>
+      </div>
+      <div class="pollution-bar">
+        <span class="bar-label">Air Quality (AQI)</span>
+        <div class="bar-track"><div class="bar-fill red" style="width:95%"></div></div>
+        <span class="bar-val">Severe</span>
+      </div>
+    </div>
+
+    <div class="city-card reveal">
+      <div class="city-header">
+        <span class="city-icon">🏙️</span>
+        <div>
+          <p class="city-name">Noida, UP</p>
+          <p class="city-sub">Current Chapter — SDET Life</p>
+        </div>
+      </div>
+      <p class="city-desc">
+        Current chapter — SDET by day, grey hair ambassador by existence. Groundwater
+        fluoride, heavy metal contamination, and a smog blanket from October to February
+        you can almost taste. The irony of writing automation scripts to test software quality
+        while the water quality around you desperately needs its own test suite.
+      </p>
+      <div class="pollution-bar">
+        <span class="bar-label">Water Quality</span>
+        <div class="bar-track"><div class="bar-fill orange" style="width:75%"></div></div>
+        <span class="bar-val">Poor</span>
+      </div>
+      <div class="pollution-bar">
+        <span class="bar-label">Air Quality (AQI)</span>
+        <div class="bar-track"><div class="bar-fill red" style="width:88%"></div></div>
+        <span class="bar-val">Very Poor</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="science-note reveal">
+    <span class="science-icon">⚗️</span>
+    <div>
+      <p class="science-title">The Science, Briefly</p>
+      <p class="science-text">
+        Oxidative stress from air pollutants (PM2.5, heavy metals, SO₂) depletes melanin-producing
+        melanocytes in hair follicles. Hard water with excess calcium, magnesium, and chlorine damages
+        the hair shaft and disrupts scalp pH. Living across Kota → Ghaziabad → Noida is essentially
+        a triple-exposure study. My hair is peer-reviewed evidence.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .real-intro {
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: #a0a8bf;
+    margin-bottom: 3rem;
+    max-width: 720px;
+    font-style: italic;
+  }
+
+  .city-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  .city-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(245,200,66,0.15);
+    padding: 2rem;
+    position: relative;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .city-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #f5c842, #ff8c00);
+  }
+  .city-card:hover {
+    border-color: rgba(245,200,66,0.35);
+    transform: translateX(4px);
+  }
+
+  .city-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .city-icon { font-size: 2rem; }
+  .city-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1rem;
+    color: #f5c842;
+    margin-bottom: 0.2rem;
+  }
+  .city-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .city-desc {
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: #9aa0b8;
+    margin-bottom: 1.25rem;
+  }
+
+  .pollution-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .bar-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    width: 110px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1.5s ease;
+  }
+  .bar-fill.red { background: linear-gradient(to right, #ff4444, #ff2244); }
+  .bar-fill.orange { background: linear-gradient(to right, #ff8c00, #f5c842); }
+  .bar-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .science-note {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.12);
+    padding: 1.75rem 2rem;
+    margin-top: 2.5rem;
+  }
+  .science-icon { font-size: 1.8rem; flex-shrink: 0; }
+  .science-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--gojo-blue);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+  .science-text {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: #8a90a8;
+  }
+</style>
+
+<!-- ── CTA ── -->
+<div class="cta-area">
+  <p class="cta-label reveal">STILL HAVE QUESTIONS?</p>
+  <a class="cta-btn reveal" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
+    Click Here For Answers
+  </a>
+  <br/><br/>
+  <p style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);letter-spacing:0.2em;margin-top:1rem;" class="reveal">
+    (You deserve what you get.)
+  </p>
+</div>
+
+<footer>
+  &copy; GREY.ENLIGHTENED // SDET EDITION // POWERED BY INFINITE VOID &amp; AUTOMATION SCRIPTS
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+    setTimeout(() => {
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+    }, 80);
+  });
+
+  // Particle canvas
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+
+  const particles = Array.from({length: 80}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.3,
+    dx: (Math.random() - 0.5) * 0.3,
+    dy: -Math.random() * 0.4 - 0.1,
+    alpha: Math.random() * 0.6 + 0.1,
+    color: Math.random() > 0.5 ? '0,212,255' : '139,92,246'
+  }));
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+      ctx.fill();
+      p.x += p.dx;
+      p.y += p.dy;
+      if (p.y < -5) { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
+      if (p.x < -5) p.x = canvas.width + 5;
+      if (p.x > canvas.width + 5) p.x = -5;
+    });
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
